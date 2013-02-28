@@ -4,6 +4,8 @@
 #include <string.h>
 #include "Arduino.h"
 
+int daysInMonth [] = {31,28,31,30,31,30,31,31,30,31,30,31};
+
 RTC_clock::RTC_clock(int source)
 {
 	_source = source;
@@ -35,15 +37,30 @@ void RTC_clock::set_time(int hour, int minute, int second)
 	RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
+int conv2d(char* p)
+{
+	int v = 0;
+  if ('0' <= *p && *p <= '9')
+  	v = *p - '0';
+  return 10 * v + *++p - '0';
+}
+
+void RTC_clock::set_time (char* time)
+{
+	_hour = conv2d(time);
+	_minute = conv2d(time + 3);
+	_second = conv2d(time + 6);
+	RTC_SetTime (RTC, _hour, _minute, _second);
+}
+
 uint32_t RTC_clock::current_time()
 {
-uint32_t dwTime;
+	uint32_t dwTime;
 
-/* Get current RTC time */
-dwTime = RTC->RTC_TIMR ;
-while ( dwTime != RTC->RTC_TIMR )
-	{
+	/* Get current RTC time */
 	dwTime = RTC->RTC_TIMR ;
+	while ( dwTime != RTC->RTC_TIMR ) {
+		dwTime = RTC->RTC_TIMR ;
 	}
 	return (dwTime);
 }
@@ -97,15 +114,34 @@ void RTC_clock::set_date (int day, int month, uint16_t year)
 	RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
 }
 
+void RTC_clock::set_date (char* date)
+{
+	_day = conv2d(date + 4);
+	
+	switch (date[0]) {
+    case 'J': _month = date[1] == 'a' ? 1 : _month = date[2] == 'n' ? 6 : 7; break;
+    case 'F': _month = 2; break;
+    case 'A': _month = date[2] == 'r' ? 4 : 8; break;
+    case 'M': _month = date[2] == 'r' ? 3 : 5; break;
+    case 'S': _month = 9; break;
+    case 'O': _month = 10; break;
+    case 'N': _month = 11; break;
+    case 'D': _month = 12; break;
+  }
+
+	_year = conv2d(date + 9);
+	_day_of_week = calculate_day_of_week(_year, _month, _day);
+	RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
+}
+
 uint32_t RTC_clock::current_date()
 {
-uint32_t dwTime;
+	uint32_t dwTime;
 
-/* Get current RTC time */
-dwTime = RTC->RTC_CALR ;
-while ( dwTime != RTC->RTC_CALR )
-	{
+	/* Get current RTC time */
 	dwTime = RTC->RTC_CALR ;
+	while ( dwTime != RTC->RTC_CALR ) {
+		dwTime = RTC->RTC_CALR ;
 	}
 	return (dwTime);
 }
@@ -270,6 +306,7 @@ void RTC_Handler(void)
 		/* Disable RTC interrupt */
 		RTC_DisableIt(RTC, RTC_IDR_ALRDIS);
 		
+		//Bepfehl ausführen
 		useralarmFunc();
 
 		/* Clear notification */
@@ -289,17 +326,43 @@ void RTC_clock::set_alarmtime(int hour, int minute, int second)
 	NVIC_EnableIRQ(RTC_IRQn);
 }
 
-void RTC_clock::set_alarmdate(int day, int month)
+void RTC_clock::set_alarmdate(int month, int day)
 {
 	uint8_t _month = month;
-	uint8_t _day = day;
+	uint8_t _day = _day;
 	
 	RTC_EnableIt(RTC, RTC_IER_ALREN);
 	RTC_SetDateAlarm(RTC, &_month, &_day);
 	NVIC_EnableIRQ(RTC_IRQn);
 }
 
-void RTC_clock::disable_alarm()
+uint32_t RTC_clock::unixtime()
 {
-	RTC_DisableIt(RTC, RTC_IDR_ALRDIS);
+	uint32_t t;
+	uint16_t days;
+	_current_date = current_date();
+	
+	_second = (((_current_time & 0x00000070) >>  4) * 10 + ((_current_time & 0x0000000F)));
+	_minute = (((_current_time & 0x00007000) >> 12) * 10 + ((_current_time & 0x00000F00) >> 8));
+	_hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
+	
+	_day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
+	_month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
+	_year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
+  						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+  						
+  _year   = _year - 2000;
+  
+  days = _day;
+	
+	for (int i = 1; i < _month; ++i)
+  	days += daysInMonth[i - 1];
+  if (_month > 2 && _year % 4 == 0)
+    ++days;
+  days += 365 * _year + (_year + 3) / 4 - 1;
+
+  t = ((days * 24 + _hour) * 60 + _minute) * 60 + _second;
+  t += SECONDS_FROM_1970_TO_2000;
+
+  return t;
 }

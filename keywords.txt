@@ -32,12 +32,18 @@ get_months 	KEYWORD2
 get_years 	KEYWORD2
 attachalarm 	KEYWORD2
 disable_alarm 	KEYWORD2
+unixtime 	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
 #######################################
 
-rtc_clock 	KEYWORD2
+
+#######################################
+# Big Instances (KEYWORD3)
+#######################################
+
+rtc_clock 	KEYWORD3
 
 #######################################
 # Constants (LITERAL1)
@@ -45,3 +51,6 @@ rtc_clock 	KEYWORD2
 
 RC 	LITERAL1
 XTAL 	LITERAL1
+
+__TIME__	LITERAL1
+__DATE__	LITERAL1

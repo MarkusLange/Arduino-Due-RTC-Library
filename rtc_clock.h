@@ -6,8 +6,13 @@
 // Includes Atmel CMSIS
 #include <chip.h>
 
+#define SUPC_KEY   			0xA5u
+
 #define RC							0
 #define	XTAL						1
+
+// Unixtimeseconds from 1. Januar 1970  00:00:00 to 1. Januar 2000   00:00:00
+#define SECONDS_FROM_1970_TO_2000 946681200
 
 class RTC_clock
 {
@@ -15,14 +20,17 @@ class RTC_clock
 		RTC_clock (int source);
 		void init ();
 		void set_time (int hour, int minute, int second);
+		void set_time (char* time);
 		int get_hours ();
 		int get_minutes ();
 		int get_seconds ();
 		void set_date (int day, int month, uint16_t year);
+		void set_date (char* date);
 		uint16_t get_years ();
 		int get_months ();
 		int get_days ();
 		int get_day_of_week ();
+		int calculate_day_of_week (uint16_t _year, int _month, int _day);
 		int set_hours (int _hour);
 		int set_minutes (int minute);
 		int set_seconds (int second);
@@ -30,10 +38,11 @@ class RTC_clock
 		int set_months (int month);
 		int set_years (uint16_t year);
 		void set_alarmtime (int hour, int minute, int second);
-		void set_alarmdate (int day, int month);
+		void set_alarmdate (int month, int day);
 		
 		void attachalarm (void (*)(void));
-		void disable_alarm ();
+		uint32_t unixtime ();
+		
 	private:
 		int _source;
 		int _hour;
@@ -43,7 +52,6 @@ class RTC_clock
 		int _month;
 		uint16_t _year;
 		int _day_of_week;
-		int calculate_day_of_week (uint16_t _year, int _month, int _day);
 		uint32_t current_time ();
 		uint32_t current_date ();
 		uint32_t _current_time;
