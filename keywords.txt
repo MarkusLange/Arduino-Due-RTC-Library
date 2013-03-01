@@ -33,6 +33,8 @@ get_years 	KEYWORD2
 attachalarm 	KEYWORD2
 disable_alarm 	KEYWORD2
 unixtime 	KEYWORD2
+get_time 	KEYWORD2
+get_date 	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)

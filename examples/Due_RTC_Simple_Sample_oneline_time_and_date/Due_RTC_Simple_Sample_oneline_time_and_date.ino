@@ -5,6 +5,7 @@
 RTC_clock rtc_clock(XTAL);
 
 char* daynames[]={"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+int hh,mm,ss,dow,dd,mon,yyyy;
 
 void setup() {
   Serial.begin(9600);
@@ -13,12 +14,10 @@ void setup() {
   rtc_clock.set_date(__DATE__);
 }
 
-int hh,mm,ss;
-
 void loop() {
-  Serial.println("And in plain for everyone");
   Serial.print("Time: ");
   rtc_clock.get_time(&hh,&mm,&ss);
+  rtc_clock.get_date(&dow,&dd,&mon,&yyyy);
   digitprint(hh, 2);
   Serial.print(":");
   digitprint(mm, 2);
@@ -26,13 +25,13 @@ void loop() {
   digitprint(ss, 2);
   Serial.println("");
   Serial.print("Date: ");
-  Serial.print(daynames[rtc_clock.get_day_of_week()-1]);
+  Serial.print(daynames[dow-1]);
   Serial.print(" ");
-  digitprint(rtc_clock.get_days(), 2);
+  digitprint(dd, 2);
   Serial.print(".");
-  digitprint(rtc_clock.get_months(), 2);
+  digitprint(mon, 2);
   Serial.print(".");
-  Serial.println(rtc_clock.get_years());
+  Serial.println(yyyy);
   Serial.println("");
 }
 

@@ -315,7 +315,7 @@ void RTC_Handler(void)
 	}
 }
 
-void RTC_clock::set_alarmtime(int hour, int minute, int second)
+void RTC_clock::set_alarmtime (int hour, int minute, int second)
 {
 	uint8_t _hour = hour;
 	uint8_t _minute = minute;
@@ -326,10 +326,10 @@ void RTC_clock::set_alarmtime(int hour, int minute, int second)
 	NVIC_EnableIRQ(RTC_IRQn);
 }
 
-void RTC_clock::set_alarmdate(int month, int day)
+void RTC_clock::set_alarmdate (int month, int day)
 {
 	uint8_t _month = month;
-	uint8_t _day = _day;
+	uint8_t _day = day;
 	
 	RTC_EnableIt(RTC, RTC_IER_ALREN);
 	RTC_SetDateAlarm(RTC, &_month, &_day);
@@ -348,10 +348,11 @@ uint32_t RTC_clock::unixtime()
 	
 	_day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
 	_month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
-	_year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
-  						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+	//_year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
+  //						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+  //_year = _year - 2000;
   						
-  _year   = _year - 2000;
+  _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
   
   days = _day;
 	
@@ -365,4 +366,14 @@ uint32_t RTC_clock::unixtime()
   t += SECONDS_FROM_1970_TO_2000;
 
   return t;
+}
+
+void RTC_clock::get_time (int *hour, int *minute, int *second)
+{
+	RTC_GetTime(RTC, (uint8_t*)hour, (uint8_t*)minute, (uint8_t*)second);
+}
+
+void RTC_clock::get_date (int *day_of_week, int *day, int *month, int *year)
+{
+	RTC_GetDate(RTC, (uint16_t*)year, (uint8_t*)month, (uint8_t*)day, (uint8_t*)day_of_week);
 }

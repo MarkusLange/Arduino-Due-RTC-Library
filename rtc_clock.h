@@ -42,6 +42,8 @@ class RTC_clock
 		
 		void attachalarm (void (*)(void));
 		uint32_t unixtime ();
+		void get_time (int *hour, int *minute, int *second);
+		void get_date (int *day_of_week, int *day, int *month, int *year);
 		
 	private:
 		int _source;
