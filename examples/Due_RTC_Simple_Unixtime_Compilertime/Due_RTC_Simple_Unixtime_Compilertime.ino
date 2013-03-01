@@ -13,17 +13,16 @@ void setup() {
   rtc_clock.set_date(__DATE__);
 }
 
-int hh,mm,ss;
-
 void loop() {
+  Serial.print("Unixtime: ");
+  Serial.println(rtc_clock.unixtime());
   Serial.println("And in plain for everyone");
   Serial.print("Time: ");
-  rtc_clock.get_time(&hh,&mm,&ss);
-  digitprint(hh, 2);
+  digitprint(rtc_clock.get_hours(), 2);
   Serial.print(":");
-  digitprint(mm, 2);
+  digitprint(rtc_clock.get_minutes(), 2);
   Serial.print(":");
-  digitprint(ss, 2);
+  digitprint(rtc_clock.get_seconds(), 2);
   Serial.println("");
   Serial.print("Date: ");
   Serial.print(daynames[rtc_clock.get_day_of_week()-1]);
