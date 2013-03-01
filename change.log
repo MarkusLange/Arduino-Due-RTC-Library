@@ -6,6 +6,8 @@ added
 			to get Date in one operation
 	- Sketch Due_RTC_Simple_Sample_oneline_time_and_date
 			for rtc_clock.get_time() & rtc_clock.get_date()
+	- Changelog and versioning
+			to get some overview for me and users
 			
 modify
 	- Function rtc_clock.unixtime()
