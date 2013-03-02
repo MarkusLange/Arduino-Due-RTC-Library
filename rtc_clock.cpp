@@ -4,9 +4,9 @@
 #include <string.h>
 #include "Arduino.h"
 
-int daysInMonth [] = {31,28,31,30,31,30,31,31,30,31,30,31};
+int daysInMonth[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
-RTC_clock::RTC_clock(int source)
+RTC_clock::RTC_clock (int source)
 {
 	_source = source;
 	
@@ -17,7 +17,7 @@ RTC_clock::RTC_clock(int source)
 	}
 }
 
-void RTC_clock::init()
+void RTC_clock::init ()
 {
 	RTC_SetHourMode(RTC, 0);
 	
@@ -29,7 +29,7 @@ void RTC_clock::init()
 //	RTC_EnableIt(RTC, RTC_IER_SECEN);
 }
 
-void RTC_clock::set_time(int hour, int minute, int second)
+void RTC_clock::set_time (int hour, int minute, int second)
 {
 	_hour = hour;
 	_minute = minute;
@@ -53,7 +53,7 @@ void RTC_clock::set_time (char* time)
 	RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
-uint32_t RTC_clock::current_time()
+uint32_t RTC_clock::current_time ()
 {
 	uint32_t dwTime;
 
@@ -65,21 +65,26 @@ uint32_t RTC_clock::current_time()
 	return (dwTime);
 }
 
-int RTC_clock::get_hours()
+void RTC_clock::get_time (int *hour, int *minute, int *second)
+{
+	RTC_GetTime(RTC, (uint8_t*)hour, (uint8_t*)minute, (uint8_t*)second);
+}
+
+int RTC_clock::get_hours ()
 {
 	_current_time = current_time();
 	
 	return (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
 }
 
-int RTC_clock::get_minutes()
+int RTC_clock::get_minutes ()
 {
 	_current_time = current_time();
 	
 	return (((_current_time & 0x00007000) >> 12) * 10 + ((_current_time & 0x00000F00) >> 8));
 }
 
-int RTC_clock::get_seconds()
+int RTC_clock::get_seconds ()
 {
 	_current_time = current_time();
 	
@@ -89,7 +94,7 @@ int RTC_clock::get_seconds()
 /**
  * \brief Calculate day_of_week from year, month, day.
  */
-int RTC_clock::calculate_day_of_week(uint16_t _year, int _month, int _day)
+int RTC_clock::calculate_day_of_week (uint16_t _year, int _month, int _day)
 {
 	int _week;
 
@@ -118,6 +123,7 @@ void RTC_clock::set_date (char* date)
 {
 	_day = conv2d(date + 4);
 	
+	//Month
 	switch (date[0]) {
     case 'J': _month = date[1] == 'a' ? 1 : _month = date[2] == 'n' ? 6 : 7; break;
     case 'F': _month = 2; break;
@@ -134,7 +140,7 @@ void RTC_clock::set_date (char* date)
 	RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
 }
 
-uint32_t RTC_clock::current_date()
+uint32_t RTC_clock::current_date ()
 {
 	uint32_t dwTime;
 
@@ -146,7 +152,12 @@ uint32_t RTC_clock::current_date()
 	return (dwTime);
 }
 
-uint16_t RTC_clock::get_years()
+void RTC_clock::get_date (int *day_of_week, int *day, int *month, int *year)
+{
+	RTC_GetDate(RTC, (uint16_t*)year, (uint8_t*)month, (uint8_t*)day, (uint8_t*)day_of_week);
+}
+
+uint16_t RTC_clock::get_years ()
 {
 	_current_date = current_date();
 	
@@ -154,21 +165,21 @@ uint16_t RTC_clock::get_years()
   						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
 }
 
-int RTC_clock::get_months()
+int RTC_clock::get_months ()
 {
 	_current_date = current_date();
 	
 	return ((((_current_date >> 20) & 1) * 10) + ((_current_date >> 16) & 0xF));
 }
 
-int RTC_clock::get_days()
+int RTC_clock::get_days ()
 {
 	_current_date = current_date();
 	
 	return ((((_current_date >> 28) & 0x3) * 10) + ((_current_date >> 24) & 0xF));
 }
 
-int RTC_clock::get_day_of_week()
+int RTC_clock::get_day_of_week ()
 {
 	_current_date = current_date();
 	
@@ -338,8 +349,14 @@ void RTC_clock::set_alarmdate (int month, int day)
 
 uint32_t RTC_clock::unixtime()
 {
+	unixtime(0);
+}
+
+uint32_t RTC_clock::unixtime(int timezone)
+{
 	uint32_t t;
 	uint16_t days;
+	float adjustment;
 	_current_date = current_date();
 	
 	_second = (((_current_time & 0x00000070) >>  4) * 10 + ((_current_time & 0x0000000F)));
@@ -365,15 +382,128 @@ uint32_t RTC_clock::unixtime()
   t = ((days * 24 + _hour) * 60 + _minute) * 60 + _second;
   t += SECONDS_FROM_1970_TO_2000;
 
-  return t;
-}
-
-void RTC_clock::get_time (int *hour, int *minute, int *second)
-{
-	RTC_GetTime(RTC, (uint8_t*)hour, (uint8_t*)minute, (uint8_t*)second);
-}
-
-void RTC_clock::get_date (int *day_of_week, int *day, int *month, int *year)
-{
-	RTC_GetDate(RTC, (uint16_t*)year, (uint8_t*)month, (uint8_t*)day, (uint8_t*)day_of_week);
+	switch (timezone) {
+  case -12:
+		adjustment = -12 * SECONDS_PER_HOUR;
+		break;
+  case -11:
+		adjustment = -11 * SECONDS_PER_HOUR;
+		break;
+  case -10:
+		adjustment = -10 * SECONDS_PER_HOUR;
+		break;
+  case -930:
+		adjustment = -9.5 * SECONDS_PER_HOUR;
+		break;
+  case -9:
+		adjustment = -9 * SECONDS_PER_HOUR;
+		break;
+  case -8:
+		adjustment = -8 * SECONDS_PER_HOUR;
+		break;
+  case -7:
+		adjustment = -7 * SECONDS_PER_HOUR;
+		break;
+  case -6:
+		adjustment = -6 * SECONDS_PER_HOUR;
+		break;
+  case -5:
+		adjustment = -5 * SECONDS_PER_HOUR;
+		break;
+  case -4:
+		adjustment = -4 * SECONDS_PER_HOUR;
+		break;
+  case -330:
+		adjustment = -3.5 * SECONDS_PER_HOUR;
+		break;
+  case -3:
+		adjustment = -3 * SECONDS_PER_HOUR;
+		break;
+  case -2:
+		adjustment = -2 * SECONDS_PER_HOUR;
+		break;
+  case -1:
+		adjustment = -1 * SECONDS_PER_HOUR;
+		break;
+  case 0:
+  default:
+		adjustment = 0;
+		break;
+  case 1:
+		adjustment = 1 * SECONDS_PER_HOUR;
+		break;
+  case 2:
+		adjustment = 2 * SECONDS_PER_HOUR;
+		break;
+  case 3:
+		adjustment = 3 * SECONDS_PER_HOUR;
+		break;
+  case 330:
+		adjustment = 3.5 * SECONDS_PER_HOUR;
+		break;
+  case 4:
+		adjustment = 4 * SECONDS_PER_HOUR;
+		break;
+  case 430:
+		adjustment = 4.5 * SECONDS_PER_HOUR;
+		break;
+  case 5:
+		adjustment = 5 * SECONDS_PER_HOUR;
+		break;
+  case 530:
+		adjustment = 5.5 * SECONDS_PER_HOUR;
+		break;
+  case 545:
+		adjustment = 5.75 * SECONDS_PER_HOUR;
+		break;
+  case 6:
+		adjustment = 6 * SECONDS_PER_HOUR;
+		break;
+  case 630:
+		adjustment = 6.5 * SECONDS_PER_HOUR;
+		break;
+  case 7:
+		adjustment = 7 * SECONDS_PER_HOUR;
+		break;
+  case 8:
+		adjustment = 8 * SECONDS_PER_HOUR;
+		break;
+  case 845:
+		adjustment = 8.75 * SECONDS_PER_HOUR;
+		break;
+  case 9:
+		adjustment = 9 * SECONDS_PER_HOUR;
+		break;
+  case 930:
+		adjustment = 9.5 * SECONDS_PER_HOUR;
+		break;
+  case 10:
+		adjustment = 10 * SECONDS_PER_HOUR;
+		break;	
+  case 1030:
+		adjustment = 10.5 * SECONDS_PER_HOUR;
+		break;
+  case 11:
+		adjustment = 11 * SECONDS_PER_HOUR;
+		break;
+  case 1130:
+		adjustment = 11.5 * SECONDS_PER_HOUR;
+		break;
+  case 12:
+		adjustment = 12 * SECONDS_PER_HOUR;
+		break;
+  case 1245:
+		adjustment = 12.75 * SECONDS_PER_HOUR;
+		break;
+  case 13:
+		adjustment = 13 * SECONDS_PER_HOUR;
+		break;
+  case 14:
+		adjustment = 14 * SECONDS_PER_HOUR;
+		break;
+	}
+	
+	t = t - (int)adjustment;
+	
+	return t;
 }

@@ -11,8 +11,11 @@
 #define RC							0
 #define	XTAL						1
 
-// Unixtimeseconds from 1. Januar 1970  00:00:00 to 1. Januar 2000   00:00:00
-#define SECONDS_FROM_1970_TO_2000 946681200
+// Unixtimeseconds from 1. Januar 1970  00:00:00 to 1. Januar 2000   00:00:00 UTC-0
+#define SECONDS_FROM_1970_TO_2000 946684800
+#define SECONDS_PER_HOUR 3600
+
+#define UTC 0
 
 class RTC_clock
 {
@@ -42,6 +45,7 @@ class RTC_clock
 		
 		void attachalarm (void (*)(void));
 		uint32_t unixtime ();
+		uint32_t unixtime (int timezone);
 		void get_time (int *hour, int *minute, int *second);
 		void get_date (int *day_of_week, int *day, int *month, int *year);
 		
