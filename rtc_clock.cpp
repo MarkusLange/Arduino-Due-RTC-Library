@@ -116,6 +116,9 @@ void RTC_clock::set_date (int day, int month, uint16_t year)
 	_month = month;
 	_year = year;
 	_day_of_week = calculate_day_of_week(_year, _month, _day);
+	
+	daysInMonth[1] = 28 + switch_years (_year);
+	
 	RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
 }
 
@@ -137,6 +140,9 @@ void RTC_clock::set_date (char* date)
 
 	_year = conv2d(date + 9);
 	_day_of_week = calculate_day_of_week(_year, _month, _day);
+	
+	daysInMonth[1] = 28 + switch_years (_year);
+	
 	RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
 }
 
@@ -284,6 +290,8 @@ int RTC_clock::set_years (uint16_t year)
 	
 	_current_date = (_current_date & (0xFFFF0080 & 0xFF1FFFFF) ) ^ ( _changed | _day_of_week ) ;
 	
+	daysInMonth[1] = 28 + switch_years (_year);
+	
 	change_date(_current_date);
 }
 
@@ -364,6 +372,7 @@ uint32_t RTC_clock::unixtime(int timezone)
 	_hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
 	
 	_day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
+	_day_of_week = ((_current_date >> 21) & 0x7);
 	_month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
 	//_year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
   //						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
@@ -381,7 +390,11 @@ uint32_t RTC_clock::unixtime(int timezone)
 
   t = ((days * 24 + _hour) * 60 + _minute) * 60 + _second;
   t += SECONDS_FROM_1970_TO_2000;
-
+  
+  if (timezone == Germany) {
+  	timezone = 1 + summertime();
+  }
+  
 	switch (timezone) {
   case -12:
 		adjustment = -12 * SECONDS_PER_HOUR;
@@ -506,4 +519,51 @@ uint32_t RTC_clock::unixtime(int timezone)
 	t = t - (int)adjustment;
 	
 	return t;
+}
+
+int RTC_clock::switch_years (uint16_t year)
+{
+	if ( ((year %4 == 0) && (year % 100 != 0)) || (year % 400 == 0) ) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+int RTC_clock::summertime ()
+{
+	int sundaysommertime, sundaywintertime, today, sundaysommertimehours, sundaywintertimehours, todayhours;
+	
+	_current_date = current_date();
+	
+	_hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
+	_day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
+	_month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
+  _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
+	
+  sundaysommertime = 31 - ( 5 + _year * 5 / 4 ) % 7;
+  sundaywintertime = 31 - ( 2 + _year * 5 / 4 ) % 7;
+  today = _day;
+  
+  for (int i = 1; i < 2; ++i) {
+  	sundaysommertime += daysInMonth[i - 1];
+  }
+  
+  for (int i = 1; i < 9; ++i) {
+  	sundaywintertime += daysInMonth[i - 1];
+  }
+  
+  for (int i = 1; i < (_month - 1); ++i) {
+  	today += daysInMonth[i - 1];
+  }
+  
+  sundaysommertimehours = sundaysommertime * 24 + 2;
+  sundaywintertimehours = sundaywintertime * 24 + 3;
+  todayhours = today * 24 + _hour;
+  
+  if (todayhours >= sundaysommertimehours && (todayhours) < (sundaywintertimehours - 1)) {
+  	return 1;
+  } else {
+  	return 0;
+  }
 }

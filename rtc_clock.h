@@ -16,6 +16,7 @@
 #define SECONDS_PER_HOUR 3600
 
 #define UTC 0
+#define Germany 2000
 
 class RTC_clock
 {
@@ -48,6 +49,8 @@ class RTC_clock
 		uint32_t unixtime (int timezone);
 		void get_time (int *hour, int *minute, int *second);
 		void get_date (int *day_of_week, int *day, int *month, int *year);
+		int switch_years (uint16_t year);
+		int summertime ();
 		
 	private:
 		int _source;
