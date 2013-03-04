@@ -7,6 +7,7 @@ RTC_clock rtc_clock(XTAL);
 char* daynames[]={"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
 boolean toggle = false;
+int old_unixtime;
 
 void setup() {
   Serial.begin(9600);
@@ -18,6 +19,29 @@ void setup() {
 }
 
 void loop() {
+  if ( rtc_clock.unixtime() != old_unixtime) {
+    old_unixtime = rtc_clock.unixtime();
+    output();
+  }
+  
+  if ( rtc_clock.get_seconds() == 10 ) {
+    Serial.print("Timeleap ");
+    toggle = !toggle;
+  }  
+  if ( rtc_clock.get_seconds() == 10 && toggle == false ) {
+    //Summertimebegin Germany in 2013
+    Serial.println("back to summer");
+    rtc_clock.set_time(1,59,50);
+    rtc_clock.set_date(31,3,2013);
+  } else if (rtc_clock.get_seconds() == 10 && toggle == true ) {
+    //Wintertimebegin Germany in 2013
+    Serial.println("forward to the end of summer");
+    rtc_clock.set_time(1,59,50);
+    rtc_clock.set_date(27,10,2013);
+  }
+}
+
+void output() {
   Serial.print("Unixtime: ");
   Serial.println(rtc_clock.unixtime(Germany));
   
@@ -45,19 +69,6 @@ void loop() {
     Serial.println("No!");
   }
   Serial.println("");
-  
-  if ( rtc_clock.get_seconds() == 10 ) {
-    toggle = !toggle;
-  }  
-  if ( rtc_clock.get_seconds() == 10 && toggle == false ) {
-    //Summertimebegin Germany in 2013
-    rtc_clock.set_time(1,59,50);
-    rtc_clock.set_date(31,3,2013);
-  } else if (rtc_clock.get_seconds() == 10 && toggle == true ) {
-    //Wintertimebegin Germany in 2013
-    rtc_clock.set_time(1,59,50);
-    rtc_clock.set_date(27,10,2013);
-  }
 }
 
 void digitprint(int value, int lenght){

@@ -1,3 +1,8 @@
+2013/04/03 Due RTC Library v1.5
+modify
+	- Sketch Due_RTC_Simple_Germay_Summertime
+			some changes in the Sketch for an better Output on the Serialmonitor
+
 2013/04/03 Due RTC Library v1.4
 added
 	- Function rtc_clock.summertime()
