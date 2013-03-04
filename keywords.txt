@@ -37,6 +37,7 @@ get_time 	KEYWORD2
 get_date 	KEYWORD2
 summertime 	KEYWORD2
 switch_years 	KEYWORD2
+timing 	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)

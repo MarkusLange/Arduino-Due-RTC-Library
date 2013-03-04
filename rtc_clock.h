@@ -18,6 +18,9 @@
 #define UTC 0
 #define Germany 2000
 
+#define MEZ  1
+#define MESZ -1
+
 class RTC_clock
 {
 	public:
@@ -51,6 +54,7 @@ class RTC_clock
 		void get_date (int *day_of_week, int *day, int *month, int *year);
 		int switch_years (uint16_t year);
 		int summertime ();
+		int timing ();
 		
 	private:
 		int _source;

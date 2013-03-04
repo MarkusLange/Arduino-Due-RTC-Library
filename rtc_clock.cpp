@@ -5,6 +5,7 @@
 #include "Arduino.h"
 
 int daysInMonth[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+int meztime;
 
 RTC_clock::RTC_clock (int source)
 {
@@ -545,10 +546,12 @@ int RTC_clock::summertime ()
   sundaywintertime = 31 - ( 2 + _year * 5 / 4 ) % 7;
   today = _day;
   
+  //Summertimebegin in March
   for (int i = 1; i < 2; ++i) {
   	sundaysommertime += daysInMonth[i - 1];
   }
   
+  //Wintertimebegin in October
   for (int i = 1; i < 9; ++i) {
   	sundaywintertime += daysInMonth[i - 1];
   }
@@ -561,9 +564,18 @@ int RTC_clock::summertime ()
   sundaywintertimehours = sundaywintertime * 24 + 3;
   todayhours = today * 24 + _hour;
   
-  if (todayhours >= sundaysommertimehours && (todayhours) < (sundaywintertimehours - 1)) {
-  	return 1;
+  if (todayhours >= sundaysommertimehours && (todayhours + 1) < sundaywintertimehours) {
+  	return (1 * meztime);
   } else {
   	return 0;
   }
+}
+
+int RTC_clock::timing ()
+{
+	if ( summertime() == 1 ) {
+		meztime = MESZ;
+	} else {
+		meztime = MEZ;
+	}
 }
