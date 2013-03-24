@@ -1,3 +1,10 @@
+2013/04/03 Due RTC Library v1.7
+added
+	- Function rtc_clock.date_already_set()
+			function to proof if date is already set
+	- Sketch Due_RTC_Simple_test_of_date
+			for rtc_clock.date_already_set()
+
 2013/04/03 Due RTC Library v1.6
 added
 	- Function rtc_clock.timing()

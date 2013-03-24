@@ -151,12 +151,26 @@ uint32_t RTC_clock::current_date ()
 {
 	uint32_t dwTime;
 
-	/* Get current RTC time */
+	/* Get current RTC date */
 	dwTime = RTC->RTC_CALR ;
 	while ( dwTime != RTC->RTC_CALR ) {
 		dwTime = RTC->RTC_CALR ;
 	}
 	return (dwTime);
+}
+
+int RTC_clock::date_already_set ()
+{
+	uint32_t dwTime;
+
+	/* Get current RTC date */
+	dwTime = RTC->RTC_CALR ;
+	
+	if ( RESET_VALUE != dwTime ) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 void RTC_clock::get_date (int *day_of_week, int *day, int *month, int *year)

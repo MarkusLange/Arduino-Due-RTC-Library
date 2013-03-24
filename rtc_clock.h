@@ -7,6 +7,7 @@
 #include <chip.h>
 
 #define SUPC_KEY   			0xA5u
+#define RESET_VALUE			0x01210720
 
 #define RC							0
 #define	XTAL						1
@@ -35,6 +36,7 @@ class RTC_clock
 		void set_date (char* date);
 		uint16_t get_years ();
 		int get_months ();
+		int date_already_set ();
 		int get_days ();
 		int get_day_of_week ();
 		int calculate_day_of_week (uint16_t _year, int _month, int _day);
