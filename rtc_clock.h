@@ -34,6 +34,7 @@ class RTC_clock
 		int get_seconds ();
 		void set_date (int day, int month, uint16_t year);
 		void set_date (char* date);
+		void set_clock (char* date, char* time);
 		uint16_t get_years ();
 		int get_months ();
 		int date_already_set ();

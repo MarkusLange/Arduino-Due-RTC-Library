@@ -161,12 +161,12 @@ uint32_t RTC_clock::current_date ()
 
 int RTC_clock::date_already_set ()
 {
-	uint32_t dwTime;
+	uint32_t dateregister;
 
 	/* Get current RTC date */
-	dwTime = RTC->RTC_CALR ;
+	dateregister = current_date ();
 	
-	if ( RESET_VALUE != dwTime ) {
+	if ( RESET_VALUE != dateregister ) {
 		return 1;
 	} else {
 		return 0;
@@ -324,6 +324,72 @@ uint32_t RTC_clock::change_date (uint32_t now)
 	return (int)(RTC->RTC_VER & RTC_VER_NVCAL) ;
 }
 
+void RTC_clock::set_clock (char* date, char* time)
+{
+  uint32_t wDate ;
+  uint32_t dwTime=0 ;
+
+	_day = conv2d(date + 4);
+	
+	//Month
+	switch (date[0]) {
+    case 'J': _month = date[1] == 'a' ? 1 : _month = date[2] == 'n' ? 6 : 7; break;
+    case 'F': _month = 2; break;
+    case 'A': _month = date[2] == 'r' ? 4 : 8; break;
+    case 'M': _month = date[2] == 'r' ? 3 : 5; break;
+    case 'S': _month = 9; break;
+    case 'O': _month = 10; break;
+    case 'N': _month = 11; break;
+    case 'D': _month = 12; break;
+  }
+
+	_year = conv2d(date + 9);
+	_day_of_week = calculate_day_of_week(_year, _month, _day);
+	
+	daysInMonth[1] = 28 + switch_years (_year);
+  
+	_hour = conv2d(time);
+	_minute = conv2d(time + 3);
+	_second = conv2d(time + 6);
+
+  uint8_t _yearcent  = ((_year/100)%10) | ((_year/1000)<<4);
+  _year  = (_year%10)       | (((_year/10)%10)<<4);
+  _month = ((_month%10)    | (_month/10)<<4);
+  _day   = ((_day%10)      | (_day/10)<<4);
+  _day_of_week  = ((_day_of_week%10)     | (_day_of_week/10)<<4);
+    
+  _hour = (_hour%10)   | ((_hour/10)<<4) ;
+  _minute  = (_minute%10) | ((_minute/10)<<4) ;
+  _second  = (_second%10) | ((_second/10)<<4) ;
+
+  /* Convert values to register value */
+  wDate = _yearcent | (_year << 8) | (_month << 16) | (_day_of_week << 21) | (_day << 24);
+            
+  dwTime = _second | (_minute << 8) | (_hour<<16) ;
+
+	/* Update time register  */
+  RTC->RTC_CR |= RTC_CR_UPDTIM ;
+  while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD) ;
+    
+  RTC->RTC_SCCR = RTC_SCCR_ACKCLR ;
+  RTC->RTC_TIMR = dwTime ;
+  // waiting for second event
+  while ((RTC->RTC_SR & RTC_SR_SEC) != RTC_SR_SEC) ;
+  RTC->RTC_CR &= (uint32_t)(~RTC_CR_UPDTIM) ;
+  RTC->RTC_SCCR |= RTC_SCCR_SECCLR; /* clear SECENV in SCCR */
+   
+  /* Update calendar register  */
+  RTC->RTC_CR |= RTC_CR_UPDCAL ;
+  while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD) ;
+
+  RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+  RTC->RTC_CALR = wDate ;
+  // waiting for second event
+  while ((RTC->RTC_SR & RTC_SR_SEC) != RTC_SR_SEC) ;
+  RTC->RTC_CR &= (uint32_t)(~RTC_CR_UPDCAL) ;
+  RTC->RTC_SCCR |= RTC_SCCR_SECCLR; /* clear SECENV in SCCR */
+}
+
 void (*useralarmFunc)(void);
 
 void RTC_clock::attachalarm(void (*userFunction)(void))
@@ -377,10 +443,11 @@ uint32_t RTC_clock::unixtime()
 
 uint32_t RTC_clock::unixtime(int timezone)
 {
-	uint32_t t;
-	uint16_t days;
+	uint32_t _ticks;
+	uint16_t _days;
 	float adjustment;
 	_current_date = current_date();
+	_current_time = current_time();
 	
 	_second = (((_current_time & 0x00000070) >>  4) * 10 + ((_current_time & 0x0000000F)));
 	_minute = (((_current_time & 0x00007000) >> 12) * 10 + ((_current_time & 0x00000F00) >> 8));
@@ -395,16 +462,16 @@ uint32_t RTC_clock::unixtime(int timezone)
   						
   _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
   
-  days = _day;
+  _days = _day;
 	
 	for (int i = 1; i < _month; ++i)
-  	days += daysInMonth[i - 1];
+  	_days += daysInMonth[i - 1];
   if (_month > 2 && _year % 4 == 0)
-    ++days;
-  days += 365 * _year + (_year + 3) / 4 - 1;
+    ++_days;
+  _days += 365 * _year + (_year + 3) / 4 - 1;
 
-  t = ((days * 24 + _hour) * 60 + _minute) * 60 + _second;
-  t += SECONDS_FROM_1970_TO_2000;
+  _ticks = ((_days * 24 + _hour) * 60 + _minute) * 60 + _second;
+  _ticks += SECONDS_FROM_1970_TO_2000;
   
   if (timezone == Germany) {
   	timezone = 1 + summertime();
@@ -531,9 +598,9 @@ uint32_t RTC_clock::unixtime(int timezone)
 		break;
 	}
 	
-	t = t - (int)adjustment;
+	_ticks = _ticks - (int)adjustment;
 	
-	return t;
+	return _ticks;
 }
 
 int RTC_clock::switch_years (uint16_t year)
@@ -550,6 +617,7 @@ int RTC_clock::summertime ()
 	int sundaysommertime, sundaywintertime, today, sundaysommertimehours, sundaywintertimehours, todayhours;
 	
 	_current_date = current_date();
+	_current_time = current_time();
 	
 	_hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
 	_day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));

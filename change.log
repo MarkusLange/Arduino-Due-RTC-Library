@@ -1,3 +1,12 @@
+2013/01/04 Due RTC Library v1.8
+added
+	- Function rtc_clock.set_clock()
+			function to set Time and Date from compliertime -/date in 1 line
+			
+fixed
+	- Bug in rtc_clock.unixtime()
+	- Bug in rtc_clock.summertime()
+
 2013/04/03 Due RTC Library v1.7
 added
 	- Function rtc_clock.date_already_set()
