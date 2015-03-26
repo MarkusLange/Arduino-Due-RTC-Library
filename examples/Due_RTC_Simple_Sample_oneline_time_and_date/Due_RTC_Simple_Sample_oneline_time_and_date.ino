@@ -10,8 +10,7 @@ int hh,mm,ss,dow,dd,mon,yyyy;
 void setup() {
   Serial.begin(9600);
   rtc_clock.init();
-  rtc_clock.set_time(__TIME__);
-  rtc_clock.set_date(__DATE__);
+  rtc_clock.set_clock(__DATE__, __TIME__);
 }
 
 void loop() {

@@ -35,6 +35,7 @@ class RTC_clock
 		void set_date (int day, int month, uint16_t year);
 		void set_date (char* date);
 		void set_clock (char* date, char* time);
+		void set_clock (unsigned long timestamp, int timezone = 0);
 		uint16_t get_years ();
 		int get_months ();
 		int date_already_set ();
@@ -49,18 +50,18 @@ class RTC_clock
 		int set_years (uint16_t year);
 		void set_alarmtime (int hour, int minute, int second);
 		void set_alarmdate (int month, int day);
-		
+
 		void attachalarm (void (*)(void));
 		uint32_t unixtime ();
 		uint32_t unixtime (int timezone);
 		void get_time (int *hour, int *minute, int *second);
 		void get_date (int *day_of_week, int *day, int *month, int *year);
-		int switch_years (uint16_t year);
+		//int switch_years (uint16_t year);
 		int summertime ();
 		int timing ();
-		
+
 	private:
-		int _source;
+//		int _source;
 		int _hour;
 		int _minute;
 		int _second;
@@ -68,6 +69,7 @@ class RTC_clock
 		int _month;
 		uint16_t _year;
 		int _day_of_week;
+		int timezoneadjustment (int timezone);
 		uint32_t current_time ();
 		uint32_t current_date ();
 		uint32_t _current_time;
