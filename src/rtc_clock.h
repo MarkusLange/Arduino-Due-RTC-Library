@@ -19,8 +19,8 @@
 #define UTC 0
 #define Germany 2000
 
-#define MEZ  1
-#define MESZ -1
+#define CET  1   //MEZ
+#define CEST 2   //MESZ
 
 class RTC_clock
 {
@@ -52,13 +52,13 @@ class RTC_clock
 		void set_alarmdate (int month, int day);
 
 		void attachalarm (void (*)(void));
-		uint32_t unixtime ();
-		uint32_t unixtime (int timezone);
+		uint32_t unixtime (int timezone = 0);
 		void get_time (int *hour, int *minute, int *second);
 		void get_date (int *day_of_week, int *day, int *month, int *year);
 		//int switch_years (uint16_t year);
 		int summertime ();
-		int timing ();
+		int UTC_abbreviation();
+		void dst_followup();
 
 	private:
 //		int _source;
@@ -70,6 +70,7 @@ class RTC_clock
 		uint16_t _year;
 		int _day_of_week;
 		int timezoneadjustment (int timezone);
+//		int _abbreviation;
 		uint32_t current_time ();
 		uint32_t current_date ();
 		uint32_t _current_time;
@@ -78,6 +79,7 @@ class RTC_clock
 		uint32_t change_date (uint32_t _now);
 		uint32_t _now;
 		uint32_t _changed;
+		bool dst_winter_done = false;
 };
 
 #endif

@@ -1,3 +1,11 @@
+2015/25/03 Due RTC Library v2.1
+added
+	- New rewritten function for the German Summertime with example rtc_clock.dst_followup
+	    Due_RTC_Simple_Sample_german_summertime
+	
+fixed
+	- Minor cosmetic changes inside the examples
+
 2015/25/03 Due RTC Library v2.0
 added
 	- Function rtc_clock.set_clock()

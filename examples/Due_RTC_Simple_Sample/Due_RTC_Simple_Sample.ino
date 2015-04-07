@@ -20,6 +20,7 @@ void loop() {
   Serial.print(rtc_clock.get_minutes());
   Serial.print(":");
   Serial.println(rtc_clock.get_seconds());
+	Serial.print(" ");
   Serial.print(daynames[rtc_clock.get_day_of_week()-1]);
   Serial.print(": ");
   Serial.print(rtc_clock.get_days());

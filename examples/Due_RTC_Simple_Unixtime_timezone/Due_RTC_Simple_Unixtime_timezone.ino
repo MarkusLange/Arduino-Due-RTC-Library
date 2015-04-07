@@ -15,7 +15,8 @@ void setup() {
 
 void loop() {
   Serial.print("Unixtime: ");
-  //All known Timezones are supported set in this style "UTC+1" or "UTC-930" without colon
+  // All known Time-zones are supported set in this style "UTC+1" or "UTC-930" without colon
+	// so if you add an Time-zone as parameter you get an unixtime that adopts the "local-time" time shift
   Serial.println(rtc_clock.unixtime(UTC-5));
   Serial.println("And in plain for everyone");
   Serial.print("Time: ");

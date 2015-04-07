@@ -37,6 +37,7 @@ void RTC_clock::set_time (int hour, int minute, int second)
   _hour = hour;
   _minute = minute;
   _second = second;
+	
   RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
@@ -46,6 +47,7 @@ int conv2d(char* p)
   int v = 0;
   if ('0' <= *p && *p <= '9')
   	v = *p - '0';
+	
   return 10 * v + *++p - '0';
 }
 
@@ -54,6 +56,7 @@ void RTC_clock::set_time (char* time)
   _hour = conv2d(time);
   _minute = conv2d(time + 3);
   _second = conv2d(time + 6);
+	
   RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
@@ -129,6 +132,7 @@ int RTC_clock::get_hours ()
   _current_time = current_time();
   
   return (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
+//  return RTC_TIMR_HOUR ( current_time() );
 }
 
 int RTC_clock::get_minutes ()
@@ -136,6 +140,7 @@ int RTC_clock::get_minutes ()
   _current_time = current_time();
   
   return (((_current_time & 0x00007000) >> 12) * 10 + ((_current_time & 0x00000F00) >> 8));
+//  return RTC_TIMR_MIN ( current_time() );
 }
 
 int RTC_clock::get_seconds ()
@@ -143,6 +148,7 @@ int RTC_clock::get_seconds ()
   _current_time = current_time();
   
   return (((_current_time & 0x00000070) >> 4) * 10 + ((_current_time & 0x0000000F)));
+//  return RTC_TIMR_SEC ( current_time() );
 }
 
 /**
@@ -237,6 +243,7 @@ uint16_t RTC_clock::get_years ()
   
   return ((((_current_date >> 4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
   						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+//  return ( RTC_CALR_CENT ( current_date() ) * 100 + RTC_CALR_YEAR ( current_date() ) );
 }
 
 int RTC_clock::get_months ()
@@ -244,6 +251,7 @@ int RTC_clock::get_months ()
   _current_date = current_date();
   
   return ((((_current_date >> 20) & 1) * 10) + ((_current_date >> 16) & 0xF));
+//  return RTC_CALR_MONTH ( current_date() );
 }
 
 int RTC_clock::get_days ()
@@ -251,6 +259,7 @@ int RTC_clock::get_days ()
   _current_date = current_date();
   
   return ((((_current_date >> 28) & 0x3) * 10) + ((_current_date >> 24) & 0xF));
+//  return RTC_CALR_DATE ( current_date() );
 }
 
 int RTC_clock::get_day_of_week ()
@@ -258,6 +267,7 @@ int RTC_clock::get_day_of_week ()
   _current_date = current_date();
   
   return (((_current_date >> 21) & 0x7));
+//  return RTC_CALR_DAY ( current_date() );
 }
 
 int RTC_clock::set_hours (int hour)
@@ -384,6 +394,14 @@ void RTC_clock::set_clock (char* date, char* time)
 	set_time(time);
 }
 
+int RTC_clock::UTC_abbreviation ()
+{
+	if ( summertime () )
+		return CEST;
+	else
+		return CET;
+}
+
 void (*useralarmFunc)(void);
 
 void RTC_clock::attachalarm(void (*userFunction)(void))
@@ -430,11 +448,6 @@ void RTC_clock::set_alarmdate (int month, int day)
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
-uint32_t RTC_clock::unixtime()
-{
-  unixtime(0);
-}
-
 uint32_t RTC_clock::unixtime(int timezone)
 {
   uint32_t _ticks;
@@ -456,14 +469,23 @@ uint32_t RTC_clock::unixtime(int timezone)
   
 	//_year 2 digits
   _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
-  
+
+//  _second = RTC_TIMR_SEC (_current_time);
+//	_minute = RTC_TIMR_MIN (_current_time);
+//	_hour   = RTC_TIMR_HOUR (_current_time);
+	
+//	_day    = RTC_CALR_DATE (_current_date);
+//	_day_of_week = RTC_CALR_DAY (_current_date);
+//	_month  = RTC_CALR_MONTH (_current_date);
+//	_year   = RTC_CALR_YEAR (_current_date);
+	
   _days = _day;
   
 	// Based on https://github.com/adafruit/RTClib/blob/master/RTClib.cpp
-  for (int i = 1; i < _month; ++i) {
+  for (int i = 1; i < _month; ++i)
     _days += daysInMonth[i - 1];
-  }
-  if (_month > 2 && _year % 4 == 0)
+  
+  if ( _month > 2 && switch_years (_year) )
     ++_days;
   
   _days += 365 * _year + (_year + 3) / 4 - 1;
@@ -591,6 +613,11 @@ int RTC_clock::summertime ()
   _month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
   _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
 	
+//	_hour   = RTC_TIMR_HOUR (_current_time);
+//	_day    = RTC_CALR_DATE (_current_date);
+//	_month  = RTC_CALR_MONTH (_current_date);
+//	_year   = RTC_CALR_YEAR (_current_date);
+	
 	// Based on http://www.webexhibits.org/daylightsaving/i.html
 	// Equations by Wei-Hwa Huang (US), and Robert H. van Gent (EC)
 	// Slightly modified for use in micro controller for integer use
@@ -628,18 +655,36 @@ int RTC_clock::summertime ()
   sundaywintertimehours = sundaywintertime * 24 + 3;
   todayhours = today * 24 + _hour;
   
-  if (todayhours >= sundaysommertimehours && (todayhours + 1) < sundaywintertimehours) {
-  	return (1 * meztime);
-  } else {
+  if ( todayhours >= sundaysommertimehours && (todayhours + 1) < sundaywintertimehours )
+  	return 1;
+  else
   	return 0;
-  }
 }
 
-int RTC_clock::timing ()
+void RTC_clock::dst_followup ()
 {
-  if ( summertime() == 1 ) {
-  meztime = MESZ;
-  } else {
-    meztime = MEZ;
-  }
+	int sundaysommertime, sundaywintertime;
+	
+	_current_date = current_date();
+	
+	_year = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
+	
+	sundaysommertime = 31 - ( 5 + _year * 5 / 4 ) % 7;
+  sundaywintertime = 31 - ( 2 + _year * 5 / 4 ) % 7;
+	
+	if (get_months () == 3 && get_days () == sundaysommertime) {
+		if (get_hours () == 2 && get_minutes () == 0 && get_seconds () == 0) {
+			set_hours (3);
+			dst_winter_done = false;
+		}
+	}
+	
+	if (!dst_winter_done) {
+	  if (get_months () == 10 && get_days () == sundaywintertime ) {
+	  	if (get_hours () == 3 && get_minutes () == 0 && get_seconds () == 0) {
+	  		set_hours (2);
+		  	dst_winter_done = true;
+		  }
+	  }
+	}
 }
