@@ -8,6 +8,7 @@
     "type": "git",
     "url": "https://github.com/MarkusLange/Arduino-Due-RTC-Library.git"
   },
+  "examples": "examples/*/*.ino",
   "frameworks": "arduino",
   "platforms": "atmelsam"
 }
