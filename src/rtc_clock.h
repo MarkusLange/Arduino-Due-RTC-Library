@@ -6,14 +6,15 @@
 // Includes Atmel CMSIS
 #include <chip.h>
 
-#define SUPC_KEY   			0xA5u
-#define RESET_VALUE			0x01210720
+#define SUPC_KEY     0xA5u
+#define RESET_VALUE  0x01210720
 
-#define RC							0
-#define	XTAL						1
-
+#define RC           0
+#define	XTAL         1
+/*
 // Unixtimeseconds from 1. Januar 1970  00:00:00 to 1. Januar 2000   00:00:00 UTC-0
 #define SECONDS_FROM_1970_TO_2000 946684800
+*/
 #define SECONDS_PER_HOUR 3600
 
 #define UTC 0
