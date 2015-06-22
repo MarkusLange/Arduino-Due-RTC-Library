@@ -495,7 +495,7 @@ uint32_t RTC_clock::unixtime(int timezone)
   _days = 365 * (_year - 1970);
   
   // add days from switch years in between except year from date
-  for( int i = 1970; i < _years ; i++){
+  for( int i = 1970; i < _year ; i++){
     if( switch_years (_year) ) {
       _days++;
     }
