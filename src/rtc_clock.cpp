@@ -8,6 +8,7 @@ uint8_t daysInMonth[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 uint8_t meztime;
 
 // Based on https://github.com/PaulStoffregen/Time.cpp
+// for 4 digit years
 #define switch_years(Y) ( !(Y % 4) && ( (Y % 100) || !(Y % 400) ) )
 
 RTC_clock::RTC_clock (int source)
@@ -41,6 +42,7 @@ void RTC_clock::set_time (int hour, int minute, int second)
   RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
+/*
 // Based on https://github.com/adafruit/RTClib/blob/master/RTClib.cpp
 int conv2d(char* p)
 {
@@ -50,13 +52,31 @@ int conv2d(char* p)
 	
   return 10 * v + *++p - '0';
 }
+*/
+
+// Based on http://www.geeksforgeeks.org/write-your-own-atoi/
+// Better version converts until none number shows up
+int conv2d(char* p)
+{
+  int v = 0; // Initialize result
+  
+  // Iterate through all characters of input string and update result
+  for (int i = 0; p[i] != '\0'; ++i) {
+    if ('0' <= p[i] && p[i] <= '9')
+      v = v*10 + p[i] - '0';
+    else
+      break;
+  }
+  // return result.
+  return v;
+}
 
 void RTC_clock::set_time (char* time)
 {
-  _hour = conv2d(time);
+  _hour   = conv2d(time);
   _minute = conv2d(time + 3);
   _second = conv2d(time + 6);
-	
+  
   RTC_SetTime (RTC, _hour, _minute, _second);
 }
 
@@ -65,11 +85,11 @@ void RTC_clock::set_clock (unsigned long timestamp, int timezone)
 {
   int monthLength;
   unsigned long time, days;
-	
-	// Sunday, 01-Jan-40 00:00:00 UTC 70 years after the beginning of the unix timestamp so
-	// if the timestamp bigger than this the "offset" will automatic removed
-	if (timestamp >= 2208988800UL)
-		time -= 2208988800UL;
+  
+  // Sunday, 01-Jan-40 00:00:00 UTC 70 years after the beginning of the unix timestamp so
+  // if the timestamp bigger than this the "offset" will automatic removed
+  if (timestamp >= 2208988800UL)
+    time -= 2208988800UL;
   
   time = timestamp + (unsigned long)timezoneadjustment(timezone);
   _second = time % 60;
@@ -174,9 +194,9 @@ int RTC_clock::calculate_day_of_week (uint16_t _year, int _month, int _day)
 
 void RTC_clock::set_date (int day, int month, uint16_t year)
 {
-  _day = day;
+  _day   = day;
   _month = month;
-  _year = year;
+  _year  = year;
   _day_of_week = calculate_day_of_week(_year, _month, _day);
   
   RTC_SetDate (RTC, (uint16_t)_year, (uint8_t)_month, (uint8_t)_day, (uint8_t)_day_of_week);
@@ -320,7 +340,7 @@ uint32_t RTC_clock::change_time (uint32_t now)
   RTC->RTC_TIMR = _now;
   RTC->RTC_CR &= (uint32_t)(~RTC_CR_UPDTIM);
   RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
-    
+  
   return (int)(RTC->RTC_VER & RTC_VER_NVTIM);
 }
 
@@ -364,7 +384,7 @@ int RTC_clock::set_years (uint16_t year)
   
   _day_of_week = calculate_day_of_week(_year, get_months(), get_days());
   _day_of_week = ((_day_of_week%10) | (_day_of_week/10)<<4)<<21;
-  	
+  
   _changed = (((_year/100)%10) | ((_year/1000)<<4)) | ((_year%10) | (((_year/10)%10))<<4)<<8;
   
   _current_date = (_current_date & (0xFFFF0080 & 0xFF1FFFFF) ) ^ ( _changed | _day_of_week );
@@ -383,7 +403,7 @@ uint32_t RTC_clock::change_date (uint32_t now)
   RTC->RTC_CALR = _now;
   RTC->RTC_CR &= (uint32_t)(~RTC_CR_UPDCAL);
   RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
-  	
+  
   return (int)(RTC->RTC_VER & RTC_VER_NVCAL);
 }
 
@@ -391,15 +411,15 @@ uint32_t RTC_clock::change_date (uint32_t now)
 void RTC_clock::set_clock (char* date, char* time)
 {
   set_date(date);
-	set_time(time);
+  set_time(time);
 }
 
 int RTC_clock::UTC_abbreviation ()
 {
-	if ( summertime () )
-		return CEST;
-	else
-		return CET;
+  if ( summertime () )
+    return CEST;
+  else
+    return CET;
 }
 
 void (*useralarmFunc)(void);
@@ -415,15 +435,15 @@ void RTC_Handler(void)
   
   /* Time or date alarm */
   if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-	  /* Disable RTC interrupt */
-	 RTC_DisableIt(RTC, RTC_IDR_ALRDIS);
-	
-	  /* Execute function */
-	  useralarmFunc();
-	
-	  /* Clear notification */
-	  RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
-	  RTC_EnableIt(RTC, RTC_IER_ALREN);
+    /* Disable RTC interrupt */
+    RTC_DisableIt(RTC, RTC_IDR_ALRDIS);
+    
+    /* Execute function */
+    useralarmFunc();
+    
+    /* Clear notification */
+    RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
+    RTC_EnableIt(RTC, RTC_IER_ALREN);
   }
 }
 
@@ -460,41 +480,40 @@ uint32_t RTC_clock::unixtime(int timezone)
   _hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
   
   _day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
-  _day_of_week = ((_current_date >> 21) & 0x7);
+  //_day_of_week = ((_current_date >> 21) & 0x7);
   _month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
 	
-	//_year 4 digits
-  //_year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
-  //						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+  //_year 4 digits
+  _year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
+  						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
   
-	//_year 2 digits
-  _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
-
-//  _second = RTC_TIMR_SEC (_current_time);
-//	_minute = RTC_TIMR_MIN (_current_time);
-//	_hour   = RTC_TIMR_HOUR (_current_time);
-	
-//	_day    = RTC_CALR_DATE (_current_date);
-//	_day_of_week = RTC_CALR_DAY (_current_date);
-//	_month  = RTC_CALR_MONTH (_current_date);
-//	_year   = RTC_CALR_YEAR (_current_date);
-	
-  _days = _day;
+  //_year 2 digits
+  //_year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
   
-	// Based on https://github.com/adafruit/RTClib/blob/master/RTClib.cpp
+  // Based on https://github.com/punkiller/workspace/blob/master/string2UnixTimeStamp.cpp
+  // days of the years between start of unixtime and now
+  _days = 365 * (_year - 1970);
+  
+  // add days from switch years in between except year from date
+  for( int i = 1970; i < _years ; i++){
+    if( switch_years (_year) ) {
+      _days++;
+    }
+  }
+  
+  // Based on https://github.com/adafruit/RTClib/blob/master/RTClib.cpp
   for (int i = 1; i < _month; ++i)
     _days += daysInMonth[i - 1];
   
   if ( _month > 2 && switch_years (_year) )
     ++_days;
   
-  _days += 365 * _year + (_year + 3) / 4 - 1;
+  _days += _day - 1;
   
   _ticks = ((_days * 24 + _hour) * 60 + _minute) * 60 + _second;
-  _ticks += SECONDS_FROM_1970_TO_2000;
   
   _ticks = _ticks - (int)timezoneadjustment(timezone);
-    
+  
   return _ticks;
 }
 
@@ -503,13 +522,13 @@ int RTC_clock::timezoneadjustment (int timezone)
   float adjustment;
   
   if (timezone == Germany)
-  	timezone = 1 + summertime();
+    timezone = 1 + summertime();
   
   switch (timezone) {
     case -12:
-		  adjustment = -12    * SECONDS_PER_HOUR; break;
+            adjustment = -12    * SECONDS_PER_HOUR; break;
     case -11:
-      adjustment = -11    * SECONDS_PER_HOUR; break;
+            adjustment = -11    * SECONDS_PER_HOUR; break;
     case -10:
 	    adjustment = -10    * SECONDS_PER_HOUR; break;
     case -930:
@@ -611,44 +630,44 @@ int RTC_clock::summertime ()
   _hour   = (((_current_time & 0x00300000) >> 20) * 10 + ((_current_time & 0x000F0000) >> 16));
   _day    = ((((_current_date >> 28) & 0x3) *   10) + ((_current_date >> 24) & 0xF));
   _month  = ((((_current_date >> 20) &   1) *   10) + ((_current_date >> 16) & 0xF));
-  _year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
-	
-//	_hour   = RTC_TIMR_HOUR (_current_time);
-//	_day    = RTC_CALR_DATE (_current_date);
-//	_month  = RTC_CALR_MONTH (_current_date);
-//	_year   = RTC_CALR_YEAR (_current_date);
-	
-	// Based on http://www.webexhibits.org/daylightsaving/i.html
-	// Equations by Wei-Hwa Huang (US), and Robert H. van Gent (EC)
-	// Slightly modified for use in micro controller for integer use
-	// also found there http://manfred.wilzeck.de/Datum_berechnen.html#Auch_mit_Osterdatum_berechnen
-	// Number 5 (Works for the Years 2000 - 2099)
+  //_year 4 digits
+  _year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
+  						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+  
+  //_year 2 digits
+  //_year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
+  
+  // Based on http://www.webexhibits.org/daylightsaving/i.html
+  // Equations by Wei-Hwa Huang (US), and Robert H. van Gent (EC)
+  // Slightly modified for use in micro controller for integer use
+  // also found there http://manfred.wilzeck.de/Datum_berechnen.html#Auch_mit_Osterdatum_berechnen
+  // Number 5 (Works for the Years 2000 - 2099)
   sundaysommertime = 31 - ( 5 + _year * 5 / 4 ) % 7;
   sundaywintertime = 31 - ( 2 + _year * 5 / 4 ) % 7;
   today = _day;
   
   // Summertime begin in March
   for (int i = 1; i < 2; ++i) {
-	  if ( (i - 1) == 1)
-	    sundaysommertime += daysInMonth[i - 1] + switch_years(_year);
-	  else
-  	  sundaysommertime += daysInMonth[i - 1];
+    if ( (i - 1) == 1)
+      sundaysommertime += daysInMonth[i - 1] + switch_years(_year);
+    else
+      sundaysommertime += daysInMonth[i - 1];
   }
   
   // Wintertime begin in October
   for (int i = 1; i < 9; ++i) {
-	  if ( (i - 1) == 1)
-	    sundaywintertime += daysInMonth[i - 1] + switch_years(_year);
-	  else
-  	  sundaywintertime += daysInMonth[i - 1];
+    if ( (i - 1) == 1)
+      sundaywintertime += daysInMonth[i - 1] + switch_years(_year);
+    else
+      sundaywintertime += daysInMonth[i - 1];
   }
   
-	// Total actually days
+  // Total actually days
   for (int i = 1; i < (_month - 1); ++i) {
-	if ( (i - 1) == 1)
-	  today += daysInMonth[i - 1] + switch_years(_year);
-	else
-  	today += daysInMonth[i - 1];
+    if ( (i - 1) == 1)
+      today += daysInMonth[i - 1] + switch_years(_year);
+    else
+      today += daysInMonth[i - 1];
   }
   
   sundaysommertimehours = sundaysommertime * 24 + 2;
@@ -656,35 +675,40 @@ int RTC_clock::summertime ()
   todayhours = today * 24 + _hour;
   
   if ( todayhours >= sundaysommertimehours && (todayhours + 1) < sundaywintertimehours )
-  	return 1;
+    return 1;
   else
-  	return 0;
+    return 0;
 }
 
 void RTC_clock::dst_followup ()
 {
-	int sundaysommertime, sundaywintertime;
-	
-	_current_date = current_date();
-	
-	_year = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
-	
-	sundaysommertime = 31 - ( 5 + _year * 5 / 4 ) % 7;
+  int sundaysommertime, sundaywintertime;
+  
+  _current_date = current_date();
+  
+  //_year 4 digits
+  _year   = ((((_current_date >>  4) & 0x7) * 1000) + ((_current_date & 0xF) * 100)
+  						+ (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF));
+  
+  //_year 2 digits
+  //_year   = (((_current_date >> 12) & 0xF) * 10) + ((_current_date >> 8) & 0xF);
+  
+  sundaysommertime = 31 - ( 5 + _year * 5 / 4 ) % 7;
   sundaywintertime = 31 - ( 2 + _year * 5 / 4 ) % 7;
-	
-	if (get_months () == 3 && get_days () == sundaysommertime) {
-		if (get_hours () == 2 && get_minutes () == 0 && get_seconds () == 0) {
-			set_hours (3);
-			dst_winter_done = false;
-		}
-	}
-	
-	if (!dst_winter_done) {
-	  if (get_months () == 10 && get_days () == sundaywintertime ) {
-	  	if (get_hours () == 3 && get_minutes () == 0 && get_seconds () == 0) {
-	  		set_hours (2);
-		  	dst_winter_done = true;
-		  }
-	  }
-	}
+  
+  if (get_months () == 3 && get_days () == sundaysommertime) {
+    if (get_hours () == 2 && get_minutes () == 0 && get_seconds () == 0) {
+      set_hours (3);
+      dst_winter_done = false;
+    }
+  }
+  
+  if (!dst_winter_done) {
+    if (get_months () == 10 && get_days () == sundaywintertime ) {
+      if (get_hours () == 3 && get_minutes () == 0 && get_seconds () == 0) {
+        set_hours (2);
+        dst_winter_done = true;
+      }
+    }
+  }
 }
