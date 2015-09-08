@@ -290,7 +290,7 @@ int RTC_clock::get_day_of_week ()
 //  return RTC_CALR_DAY ( current_date() );
 }
 
-int RTC_clock::get_valid_entry ()
+uint32_t RTC_clock::get_valid_entry ()
 {
 	return (RTC->RTC_VER);
 }
