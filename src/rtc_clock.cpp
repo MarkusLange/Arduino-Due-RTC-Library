@@ -290,6 +290,11 @@ int RTC_clock::get_day_of_week ()
 //  return RTC_CALR_DAY ( current_date() );
 }
 
+int RTC_clock::get_valid_entry ()
+{
+	return (RTC->RTC_VER);
+}
+
 int RTC_clock::set_hours (int hour)
 {
   _hour = hour;
