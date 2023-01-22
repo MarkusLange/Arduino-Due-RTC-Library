@@ -83,7 +83,7 @@ void RTC_clock::set_time (char* time)
 // Based on https://github.com/PaulStoffregen/Time.cpp
 void RTC_clock::set_clock (unsigned long timestamp, int timezone)
 {
-  int monthLength;
+  unsigned int monthLength;
   unsigned long time, days;
   
   // Sunday, 01-Jan-40 00:00:00 UTC 70 years after the beginning of the unix timestamp so
@@ -209,7 +209,7 @@ void RTC_clock::set_date (char* date)
   
   //Month
   switch (date[0]) {
-    case 'J': _month = date[1] == 'a' ? 1 : _month = date[2] == 'n' ? 6 : 7; break;
+    case 'J': _month = date[1] == 'a' ? 1 : (_month = date[2] == 'n') ? 6 : 7; break;
     case 'F': _month =  2; break;
     case 'A': _month = date[2] == 'r' ? 4 : 8; break;
     case 'M': _month = date[2] == 'r' ? 3 : 5; break;
@@ -305,7 +305,7 @@ int RTC_clock::set_hours (int hour)
   
   _current_time = (_current_time & 0xFFC0FFFF) ^ _changed;
   
-  change_time(_current_time);
+  return change_time(_current_time);
 }
 
 int RTC_clock::set_minutes (int minute)
@@ -318,7 +318,7 @@ int RTC_clock::set_minutes (int minute)
   
   _current_time = (_current_time & 0xFFFF80FF) ^ _changed;
   
-  change_time(_current_time);
+  return change_time(_current_time);
 }
 
 int RTC_clock::set_seconds (int second)
@@ -331,7 +331,7 @@ int RTC_clock::set_seconds (int second)
   
   _current_time = (_current_time & 0xFFFFFF80) ^ _changed;
   
-  change_time(_current_time);
+  return change_time(_current_time);
 }
 
 uint32_t RTC_clock::change_time (uint32_t now)
@@ -362,7 +362,7 @@ int RTC_clock::set_days (int day)
   
   _current_date = (_current_date & (0xC0FFFFFF & 0xFF1FFFFF) ) ^ ( _changed | _day_of_week );
   
-  change_date(_current_date);
+  return change_date(_current_date);
 }
 
 int RTC_clock::set_months (int month)
@@ -378,7 +378,7 @@ int RTC_clock::set_months (int month)
   
   _current_date = (_current_date & (0xFFE0FFFF & 0xFF1FFFFF) ) ^ ( _changed | _day_of_week );
   
-  change_date(_current_date);
+  return change_date(_current_date);
 }
 
 int RTC_clock::set_years (uint16_t year)
@@ -394,7 +394,7 @@ int RTC_clock::set_years (uint16_t year)
   
   _current_date = (_current_date & (0xFFFF0080 & 0xFF1FFFFF) ) ^ ( _changed | _day_of_week );
   
-  change_date(_current_date);
+  return change_date(_current_date);
 }
 
 uint32_t RTC_clock::change_date (uint32_t now)
